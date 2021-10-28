@@ -43,9 +43,12 @@ You can check on the status of your stack creation either via the AWS Console or
 ```
 aws cloudformation describe-stacks --stack-name MythicalMysfitsCoreStack
 ```
-When in the `describe-stacks` response, you see a status of `CREATE_COMPLETE`, CloudFormation has finished provisioning all of the core networking and security resources described above.
 
-Once you see `CREATE_COMPLETE` in the `describe-stacks` response command above, copy the full response and save it for future reference in a text editor. Or, create a temporary folder and file to save it to within your IDE. This JSON response contains the unique identifiers for several of the created resources, which we will use later in this workshop.  
+Run the the `describe-stacks` command, until you see a status of ```"StackStatus": "CREATE_COMPLETE"```
+
+When you get this response, CloudFormation has finished provisioning all of the core networking and security resources described above.
+
+Copy the **full response** and save it for future reference in a text editor. Or, create a temporary folder and file to save it to within your IDE. This JSON response contains the unique identifiers for several of the created resources, which we will use later in this workshop.  
 
 ## Module 2a: Deploying a Service with AWS Fargate
 
@@ -65,13 +68,21 @@ Docker comes already installed on the Cloud9 IDE that you've created, so in orde
 cd ~/environment/aws-modern-application-workshop/module-2/app
 ```
 
-* Then build the docker image, this will use the file in the current directory called Dockerfile that tells Docker all of the instructions that should take place when the build command is executed. Replace the contents in and the {braces} below with the appropriate information from the account/region you're working in:
+* Then build the docker image, this will use the file in the current directory called Dockerfile that tells Docker all of the instructions that should take place when the build command is executed. Replace the contents in and the {braces} below with the appropriate information from the account/region you're working in.
+
+To retrieve the needed information about your account and region, you can run the following CLI command that uses the AWS Security Token Service to return back information about the principal issuing the CLI command:
+
+```
+aws sts get-caller-identity
+```
+
+Once you have your Account ID, you are ready to build the docker image:
 
 ```
 docker build . -t REPLACE_ME_AWS_ACCOUNT_ID.dkr.ecr.REPLACE_ME_REGION.amazonaws.com/mythicalmysfits/service:latest
 ```
 
-You will see docker download and install all of the necessary dependency packages that our application needs, and output the tag for the built image.  Copy the image tag for later reference.
+You will see docker download and install all of the necessary dependency packages that our application needs, and output the tag for the built image.  **Copy the image tag for later reference. Below the example tag shown is: 111111111111.dkr.ecr.us-east-1.amazonaws.com/mythicalmysfits/service:latest**
 
 ```
 Successfully built 8bxxxxxxxxab
@@ -80,10 +91,10 @@ Successfully tagged 111111111111.dkr.ecr.us-east-1.amazonaws.com/mythicalmysfits
 
 #### Testing the Service Locally
 
-Let's test our image locally within Cloud9 to make sure everything is operating as expected. Copy the image tag that resulted from the previous camm and run the following command to deploy the container “locally” (which is actually within your Cloud9 IDE inside AWS!):
+Let's test our image locally within Cloud9 to make sure everything is operating as expected. Copy the image tag that resulted from the previous command and run the following command to deploy the container “locally” (which is actually within your Cloud9 IDE inside AWS!):
 
 ```
-docker run -p 8080:8080 111111111111.dkr.ecr.us-east-1.amazonaws.com/mythicalmysfits/service:latest
+docker run -p 8080:8080 REPLACE_ME_WITH_DOCKER_IMAGE_TAG
 ```
 
 As a result you will see docker reporting that your container is up and running locally:
@@ -92,7 +103,7 @@ As a result you will see docker reporting that your container is up and running 
  * Running on http://0.0.0.0:8080/ (Press CTRL+C to quit)
 ```
 
-To test our service with a local request, we're going to open up the build-in web browser within the Cloud9 IDE that can be used to preview applications that are running on the IDE instance.  To open the preview web browser, select **Preview > Preview Running Application** in the Cloud9 menu bar:
+To test our service with a local request, we're going to open up the built-in web browser within the Cloud9 IDE that can be used to preview applications that are running on the IDE instance.  To open the preview web browser, select **Preview > Preview Running Application** in the Cloud9 menu bar:
 
 ![preview-menu](/images/module-2/preview-menu.png)
 
@@ -102,7 +113,7 @@ This will open another panel in the IDE where the web browser will be available.
 
 If successful you will see a response from the service that returns the JSON document stored at `/aws-modern-application-workshop/module-2/app/service/mysfits-response.json`
 
-When done testing the service you can stop it by pressing CTRL-c on PC or ⌘-c on Mac.
+When done testing the service you can stop it by pressing CTRL-c on PC or Mac.
 
 #### Pushing the Docker Image to Amazon ECR
 
@@ -122,7 +133,7 @@ $(aws ecr get-login --no-include-email)
 Next, push the image you created to the ECR repository using the copied tag from above. Using this command, docker will push your image and all the images it depends on to Amazon ECR:
 
 ```
-docker push 111111111111.dkr.ecr.us-east-1.amazonaws.com/mythicalmysfits/service:latest
+docker push REPLACE_ME_WITH_DOCKER_IMAGE_TAG
 ```
 
 Run the following command to see your newly pushed docker image stored inside the ECR repository:
@@ -159,7 +170,19 @@ aws logs create-log-group --log-group-name mythicalmysfits-logs
 
 Now that we have a cluster created and a log group defined for where our container logs will be pushed to, we're ready to register an ECS **task definition**.  A task in ECS is a set of container images that should be scheduled together. A task definition declares that set of containers and the resources and configuration those containers require.  You will use the AWS CLI to create a new task definition for how your new container image should be scheduled to the ECS cluster we just created.  
 
-A JSON file has been provided that will serve as the input to the CLI command, stored at `~/environment/aws-modern-application-workshop/module-2/aws-cli/task-definition.json`. Open this file in the IDE and replace the indicated values with the appropriate ones from your created resources.  These values with be pulled from the CloudFormation response you copied earlier as well as the docker image tag that you pushed earlier to ECR, eg: `111111111111.dkr.ecr.us-east-1.amazonaws.com/mythicalmysfits/service:latest`
+A JSON file has been provided that will serve as the input to the CLI command.
+
+Open `~/environment/aws-modern-application-workshop/module-2/aws-cli/task-definition.json` in the IDE.
+
+Replace the indicated values with the appropriate ones from your created resources.  
+
+These values with be pulled from the CloudFormation response you copied earlier as well as the docker image tag that you pushed earlier to ECR, eg: `111111111111.dkr.ecr.us-east-1.amazonaws.com/mythicalmysfits/service:latest`
+
+If you need to retrieve the values from the CloudFormation respose, run this command:
+
+```
+aws cloudformation describe-stacks --stack-name MythicalMysfitsCoreStack
+```
 
 Once you have replaced the values in `task-defintion.json` and saved it. Execute the following command to register a new task definition in ECS:
 
@@ -178,8 +201,7 @@ To provision a new NLB, execute the following CLI command in the Cloud9 terminal
 ```
 aws elbv2 create-load-balancer --name mysfits-nlb --scheme internet-facing --type network --subnets REPLACE_ME_PUBLIC_SUBNET_ONE REPLACE_ME_PUBLIC_SUBNET_TWO
 ```
-
-Copy the response provided by this command, which contains the DNS name of the provisioned NLB as well as its ARN.  You will use this DNS name to test the service once it has been deployed.  And the ARN will be used in a future step.
+Copy the values at ```"DNSName":```, ```"VpcId":```, & ```"LoadBalancerArn":``` or save the **full response** provided by this command, which contains the DNS name of the provisioned NLB as well as its ARN.  You will use this DNS name to test the service once it has been deployed.  And the ARN will be used in a future step.
 
 #### Create a Load Balancer Target Group
 
@@ -188,8 +210,7 @@ Next, use the CLI to create an NLB **target group**. A target group allows AWS r
 ```
 aws elbv2 create-target-group --name MythicalMysfits-TargetGroup --port 8080 --protocol TCP --target-type ip --vpc-id REPLACE_ME --health-check-interval-seconds 10 --health-check-path / --health-check-protocol HTTP --healthy-threshold-count 3 --unhealthy-threshold-count 3
 ```
-
-Copy and save the response from the above command as well, which contains the Target Group ARN to be used in the next step.
+Copy the value at ```"TargetGroupArn":``` or save the **full response** from the above command as well, which contains the Target Group ARN to be used in the next step.
 
 #### Create a Load Balancer Listener
 
@@ -217,7 +238,7 @@ If the above returns an error about the role existing already, you can ignore it
 
 With the NLB created and configured, and the ECS service granted appropriate permissions, we're ready to create the actual ECS **service** where our containers will run and register themselves to the load balancer to receive traffic.  We have included a JSON file for the CLI input that is located at: `~/environment/aws-modern-application-workshop/module-2/aws-cli/service-definition.json`.  This file includes all of the configuration details for the service to be created, including indicating that this service should be launched with **AWS Fargate** - which means that you do not have to provision any servers within the targeted cluster.  The containers that are scheduled as part of the task used in this service will run on top of a cluster that is fully managed by AWS.
 
-Open this file and replace the indicated values of `REPLACE_ME` and save it, then run the following command to create the service:
+Open ```~/environment/aws-modern-application-workshop/module-2/aws-cli/service-definition.json``` in the IDE and replace the indicated values of `REPLACE_ME`. Save it, then run the following command to create the service:
 
 ```
 aws ecs create-service --cli-input-json file://~/environment/aws-modern-application-workshop/module-2/aws-cli/service-definition.json
@@ -234,6 +255,8 @@ http://mysfits-nlb-123456789-abc123456.elb.us-east-1.amazonaws.com/mysfits
 ```
 
 A response showing the same JSON response we received earlier when testing the docker container locally in Cloud9 means your Flask API is up and running on AWS Fargate.
+
+>Note: This Network Load Balancer only supports HTTP (http://) requests since no SSL/TLS certificates are installed on it. For this tutorial, be sure to submit requests using http:// only, https:// requests will not work properly.
 
 ### Update Mythical Mysfits to Call the NLB
 
@@ -394,3 +417,6 @@ You can view the progress of your code change through the CodePipeline console h
 This concludes Module 2.
 
 [Proceed to Module 3](/module-3)
+
+
+## [AWS Developer Center](https://developer.aws)

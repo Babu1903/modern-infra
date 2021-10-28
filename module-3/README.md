@@ -15,7 +15,7 @@ Now that you have a service deployed and a working CI/CD pipeline to deliver cha
 
 #### Create a DynamoDB Table
 
-To add a DynamoDB table to the architecture, we have included another JSON CLI input file that defines a table called **MysfitsTable**. This table will have a primary index defined by a hash key attribute called **MysfitId**, and two more secondary indexes.  The first secondary index will have the hash key of **Species** and a range key of **MysfitId**, and the second secondary index will have the hash key of **Alignment** and a range key of **MysfitId**.  These two secondary indexes will allow us to execute queries against the table to retrieve all of the mysfits that match a given Species or Alignment to enable the filter functionality you may have noticed isn't yet working on the website.  You can view this file at `~/environment/aws-modern-application-workshop/module-3/aws-cli/dynamodb-table.json`. No changes need to be made to this file and it is ready to execute.
+To add a DynamoDB table to the architecture, we have included another JSON CLI input file that defines a table called **MysfitsTable**. This table will have a primary index defined by a hash key attribute called **MysfitId**, and two more secondary indexes.  The first secondary index will have the hash key of **GoodEvil** and a range key of **MysfitId**, and the second secondary index will have the hash key of **LawChaos** and a range key of **MysfitId**.  These two secondary indexes will allow us to execute queries against the table to retrieve all of the mysfits that match a given Species or Alignment to enable the filter functionality you may have noticed isn't yet working on the website.  You can view this file at `~/environment/aws-modern-application-workshop/module-3/aws-cli/dynamodb-table.json`. No changes need to be made to this file and it is ready to execute.
 
 To create the table using the AWS CLI, execute the following command in the Cloud9 terminal:
 
@@ -93,7 +93,7 @@ Now, in just 5-10 minutes you'll see your code changes make it through your full
 
 #### Update The Website Content in S3
 
-Finally, we need to publish a new index.html page to our S3 bucket so that the new API functionality using query strings to filter responses will be used.  The new index.html file is located at `~/environment/aws-modern-application-workshop/module-3/web/index.html`.  Open this file in your Cloud9 IDE and replace the string indicating “REPLACE_ME” just as you did in Module 1, with the appropriate NLB endpoint.  Refer to the file you already edited in the /module-1/ directory if you need to.  After replacing the endpoint to point at your NLB, upload the new index.html file by running the following command (replacing with the name of the bucket you created in Module 1:
+Finally, we need to publish a new index.html page to our S3 bucket so that the new API functionality using query strings to filter responses will be used.  The new index.html file is located at `~/environment/aws-modern-application-workshop/module-3/web/index.html`.  Open this file in your Cloud9 IDE and replace the string indicating “REPLACE_ME” just as you did in Module 2, with the appropriate NLB endpoint. Remember do not inlcude the /mysfits path. Refer to the file you already edited in the /module-2/ directory if you need to.  After replacing the endpoint to point at your NLB, upload the new index.html file by running the following command (replacing with the name of the bucket you created in Module 1:
 
 ```
 aws s3 cp --recursive ~/environment/aws-modern-application-workshop/module-3/web/ s3://your_bucket_name_here/
@@ -104,3 +104,6 @@ Re-visit your Mythical Mysfits website to see the new population of Mysfits load
 That concludes module 3.
 
 [Proceed to Module 4](/module-4)
+
+
+## [AWS Developer Center](https://developer.aws)
